@@ -14,4 +14,4 @@ A modern peer-to-peer file sharing system built with Rust and Next.js.
 [Coming soon]
 
 ## License
-[Coming soon]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
