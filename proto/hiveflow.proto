@@ -1,0 +1,126 @@
+syntax = "proto3";
+package hiveflow;
+
+// Core data structures
+message FileMetadata {
+  string file_id = 1;            // Content-addressed ID
+  string name = 2;               // Original filename
+  uint64 size = 3;              // Total size in bytes
+  uint32 chunk_size = 4;         // Size of each chunk
+  string mime_type = 5;          // MIME type
+  bytes hash = 6;                // Full file hash
+  map<string, string> tags = 7;  // Custom metadata
+  uint64 created_at = 8;         // Unix timestamp
+  uint64 version = 9;            // File version
+  string category = 10;          // Content category
+  bytes signature = 11;          // Publisher's signature
+  map<string, bytes> checksums = 12; // Multiple hash algorithms
+}
+
+message ChunkInfo {
+  string file_id = 1;
+  uint32 index = 2;             // Chunk index
+  bytes hash = 3;               // Chunk hash
+  uint32 size = 4;              // Actual chunk size
+  bytes signature = 5;          // Chunk signature
+  uint64 sequence = 6;          // Transfer sequence number
+}
+
+enum Priority {
+  LOW = 0;
+  NORMAL = 1;
+  HIGH = 2;
+}
+
+enum PeerStatus {
+  UNKNOWN = 0;
+  ONLINE = 1;
+  BUSY = 2;
+  AWAY = 3;
+  OFFLINE = 4;
+}
+
+message PeerInfo {
+  string peer_id = 1;           // Unique peer identifier
+  string address = 2;           // Connection address
+  float bandwidth = 3;          // Available bandwidth
+  uint32 reputation = 4;        // Peer reputation score
+  repeated string capabilities = 5; // Supported features
+  PeerStatus status = 6;        // Current peer status
+  uint64 last_seen = 7;         // Last active timestamp
+  bytes public_key = 8;         // Peer's public key
+  uint32 max_connections = 9;    // Max concurrent connections
+  uint32 rate_limit = 10;        // Chunks per second limit
+}
+
+// Search related
+message SearchRequest {
+  string query = 1;             // Search terms
+  repeated string tags = 2;     // Metadata tags to match
+  uint32 limit = 3;            // Max results
+  uint32 offset = 4;           // Pagination offset
+  string category = 5;         // Content category filter
+  uint64 min_size = 6;         // Minimum file size
+  uint64 max_size = 7;         // Maximum file size
+}
+
+message SearchResponse {
+  repeated FileMetadata files = 1;
+  uint32 total = 2;            // Total matching results
+  repeated PeerInfo sources = 3; // Available sources
+}
+
+// Transfer related
+message ChunkRequest {
+  string file_id = 1;
+  uint32 chunk_index = 2;
+  uint64 offset = 3;           // Byte offset for resume
+  bytes requester_id = 4;      // Requester's identity
+  Priority priority = 5;       // Request priority
+}
+
+message ChunkData {
+  string file_id = 1;
+  uint32 chunk_index = 2;
+  bytes data = 3;
+  bytes signature = 4;
+  uint64 sequence = 5;
+}
+
+message ChunkAvailability {
+  string file_id = 1;
+  repeated uint32 available_chunks = 2;
+  uint64 updated_at = 3;
+}
+
+// Health check
+message HealthRequest {
+  string peer_id = 1;
+  float current_bandwidth = 2;
+  uint64 timestamp = 3;
+}
+
+message HealthResponse {
+  PeerStatus status = 1;
+  float bandwidth = 2;
+  uint32 active_transfers = 3;
+  uint64 timestamp = 4;
+}
+
+// Services
+service HiveFlow {
+  // Core operations
+  rpc Search(SearchRequest) returns (SearchResponse);
+  rpc GetChunk(ChunkRequest) returns (stream ChunkData);
+  rpc Announce(FileMetadata) returns (PeerInfo);
+  rpc GetPeers(FileMetadata) returns (stream PeerInfo);
+  
+  // Health monitoring
+  rpc CheckHealth(HealthRequest) returns (HealthResponse);
+  
+  // Bandwidth management
+  rpc UpdateBandwidth(PeerInfo) returns (PeerInfo);
+
+  // Availability tracking
+  rpc GetAvailability(FileMetadata) returns (stream ChunkAvailability);
+}
