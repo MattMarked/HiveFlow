@@ -1,5 +1,21 @@
 # HiveFlow
 
+> Oh eMule, dear donkey of downloads past,
+> With your ED2K links that seemed to last
+> Forever loading at 56k,
+> While I hoped my Windows wouldn't break.
+> 
+> Your chunk system taught me patience true,
+> As I watched that progress bar crawl through.
+> High ID or Low, you didn't care,
+> Sharing rare files with peers who'd dare.
+> 
+> Through Kad and servers, you'd bray and seek,
+> Making dial-up modems wheeze and squeak.
+> A stubborn beast, but faithful too,
+> Ancient p2p, we remember you!
+> - Metchio
+
 A modern peer-to-peer file sharing system built with contemporary technologies. The project aims to be free for users, fast in sharing files, reliable, and with minimal maintenance costs.
 
 ## Technology Stack
