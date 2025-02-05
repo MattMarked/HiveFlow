@@ -92,14 +92,21 @@ The protocol (.proto file) defines:
 1. Initial project structure created
 2. Protocol definitions completed
 3. Basic documentation in place
-4. Git repository initialized
+4. Git repository initialized both in local and Github account
 5. MIT License applied
+6. Rust core project setup complete
+   - Project structure created (hiveflow-core)
+   - Dependencies configured in Cargo.toml
+   - Module structure established (swarm, cell, crypto, protocol)
+   - Build system configured for protobuf compilation
+   - Initial tests passing
 
 ## Next Steps
-1. Implement Rust core
-   - Set up libp2p
-   - Implement basic networking
-   - Add content storage
+1. Implement Rust core modules
+   - Implement swarm module for P2P networking (libp2p)
+   - Develop protocol message handlers
+   - Create content storage system (cell module)
+   - Add encryption and security features (crypto module)
 
 2. Create web frontend
    - Basic UI structure
@@ -110,6 +117,7 @@ The protocol (.proto file) defines:
    - Protocol validation
    - Network testing
    - Security audit
+   - Expand test coverage for core modules
 
 ## Project Setup Instructions
 1. Clone repository

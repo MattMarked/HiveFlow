@@ -1,0 +1,37 @@
+[package]
+name = "hiveflow-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1.32", features = ["full"] }
+
+# P2P networking
+libp2p = { version = "0.52", features = [
+    "tcp",
+    "websocket",
+    "dns",
+    "noise",
+    "yamux",
+    "kad",
+    "identify",
+    "ping"
+]}
+
+# Protocol buffers
+prost = "0.12"
+tonic = "0.10"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Utilities
+futures = "0.3"
+async-trait = "0.1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+[build-dependencies]
+tonic-build = "0.10"
