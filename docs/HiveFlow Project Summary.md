@@ -15,7 +15,7 @@ HiveFlow is a modern peer-to-peer file sharing system, inspired by eMule but bui
 ## Project Structure
 ```
 hiveflow/
-├── core/                      # Rust P2P core
+├── hiveflow-core/            # Rust P2P core
 │   ├── src/
 │   │   ├── swarm/            # P2P networking
 │   │   ├── cell/             # Content storage
@@ -100,13 +100,19 @@ The protocol (.proto file) defines:
    - Module structure established (swarm, cell, crypto, protocol)
    - Build system configured for protobuf compilation
    - Initial tests passing
+7. Core/cell module complete with basic functionality
+   - Test coverage includes basic operations and garbage collection
+   - Ready for integration with other modules
 
 ## Next Steps
 1. Implement Rust core modules
-   - Implement swarm module for P2P networking (libp2p)
+   - Create content storage system (cell module): in progress
+      - Implement file splitting/joining functions
+      - Add integrity verification
    - Develop protocol message handlers
-   - Create content storage system (cell module)
    - Add encryption and security features (crypto module)
+   - Implement swarm module for P2P networking (libp2p)
+
 
 2. Create web frontend
    - Basic UI structure

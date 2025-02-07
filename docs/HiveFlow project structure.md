@@ -2,7 +2,7 @@
 
 ```
 hiveflow/
-├── core/                      # Rust P2P core
+├── hiveflow-core/            # Rust P2P core
 │   ├── src/
 │   │   ├── swarm/            # P2P networking
 │   │   ├── cell/             # Content storage
