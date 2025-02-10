@@ -1,7 +1,9 @@
-pub mod swarm;
+// src/lib.rs
 pub mod cell;
 pub mod crypto;
+pub mod proto;
 pub mod protocol;
+pub mod swarm;
 
 use anyhow::Result;
 

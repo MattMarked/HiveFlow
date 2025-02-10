@@ -1,3 +1,6 @@
+//hiveflow-core/src/cell/mod.rs
+
+use crate::proto;
 use blake3;
 use hex;
 use serde::{Deserialize, Serialize};
@@ -10,10 +13,12 @@ use walkdir::WalkDir;
 /// Represents a chunk of file data in the content-addressable storage
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Chunk {
-    hash_bytes: Vec<u8>, // Store hash as raw bytes instead of Hash type
-    size: usize,
+    hash_bytes: Vec<u8>, // Primary hash (BLAKE3)
+    size: u32,           // Changed to u32 to match proto
     index: u32,
     file_id: String,
+    signature: Option<Vec<u8>>, // Optional signature for verification
+    sequence: u64,              // Transfer sequence number
 }
 
 impl Chunk {
@@ -21,18 +26,35 @@ impl Chunk {
     pub fn hash(&self) -> blake3::Hash {
         blake3::Hash::from_bytes(self.hash_bytes.as_slice().try_into().unwrap())
     }
+
+    /// Convert to protocol ChunkInfo
+    pub fn to_proto(&self) -> proto::ChunkInfo {
+        proto::ChunkInfo {
+            file_id: self.file_id.clone(),
+            index: self.index,
+            hash: self.hash_bytes.clone(),
+            size: self.size,
+            signature: self.signature.clone().unwrap_or_default(),
+            sequence: self.sequence,
+        }
+    }
 }
 
 /// Represents metadata about a stored file
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileInfo {
     file_id: String,
-    total_size: u64,
-    chunk_hashes: Vec<Vec<u8>>, // Store hashes as raw bytes
+    name: String,    // Renamed from original_name
+    size: u64,       // Renamed from total_size
+    chunk_size: u32, // Added to match proto
     mime_type: String,
-    original_name: String,
+    chunk_hashes: Vec<Vec<u8>>, // Will be used for chunk verification
     created_at: u64,
+    version: u64,               // Added to match proto
+    category: Option<String>,   // Added to match proto
+    signature: Option<Vec<u8>>, // Added to match proto
     checksums: HashMap<String, Vec<u8>>,
+    tags: HashMap<String, String>, // Added to match proto
 }
 
 impl FileInfo {
@@ -42,6 +64,61 @@ impl FileInfo {
             .iter()
             .map(|bytes| blake3::Hash::from_bytes(bytes.as_slice().try_into().unwrap()))
             .collect()
+    }
+
+    /// Convert to protocol FileMetadata
+    pub fn to_proto(&self) -> proto::FileMetadata {
+        proto::FileMetadata {
+            file_id: self.file_id.clone(),
+            name: self.name.clone(),
+            size: self.size,
+            chunk_size: self.chunk_size,
+            mime_type: self.mime_type.clone(),
+            hash: self.chunk_hashes.first().cloned().unwrap_or_default(),
+            tags: self.tags.clone(),
+            created_at: self.created_at,
+            version: self.version,
+            category: self.category.clone().unwrap_or_default(),
+            signature: self.signature.clone().unwrap_or_default(),
+            checksums: self.checksums.clone(),
+        }
+    }
+
+    /// Create from protocol FileMetadata
+    pub fn from_proto(meta: proto::FileMetadata) -> Self {
+        FileInfo {
+            file_id: meta.file_id,
+            name: meta.name,
+            size: meta.size,
+            chunk_size: meta.chunk_size,
+            mime_type: meta.mime_type,
+            chunk_hashes: vec![meta.hash],
+            created_at: meta.created_at,
+            version: meta.version,
+            category: Some(meta.category),
+            signature: Some(meta.signature),
+            checksums: meta.checksums,
+            tags: meta.tags,
+        }
+    }
+}
+
+/// Priority levels for chunk transfers
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Priority {
+    Low = 0,
+    Normal = 1,
+    High = 2,
+}
+
+impl From<i32> for Priority {
+    fn from(value: i32) -> Self {
+        match value {
+            0 => Priority::Low,
+            1 => Priority::Normal,
+            2 => Priority::High,
+            _ => Priority::Normal,
+        }
     }
 }
 
@@ -82,9 +159,11 @@ impl Cell {
         let hash = blake3::hash(data);
         let chunk = Chunk {
             hash_bytes: hash.as_bytes().to_vec(),
-            size: data.len(),
+            size: data.len() as u32,
             index,
             file_id: file_id.to_string(),
+            signature: None,
+            sequence: 0, // Will be set when preparing for transfer
         };
 
         // Store the chunk data
@@ -216,12 +295,41 @@ impl Cell {
 
         Ok(removed)
     }
+
+    /// Create a chunk request message
+    pub fn create_chunk_request(
+        &self,
+        file_id: &str,
+        chunk_index: u32,
+        priority: Priority,
+        requester_id: Vec<u8>,
+    ) -> proto::ChunkRequest {
+        proto::ChunkRequest {
+            file_id: file_id.to_string(),
+            chunk_index,
+            offset: 0, // For resume support
+            requester_id,
+            priority: priority as i32,
+        }
+    }
+
+    /// Create chunk data message from chunk
+    pub async fn create_chunk_data(&self, chunk: &Chunk) -> io::Result<proto::ChunkData> {
+        let data = self.get_chunk(&chunk.hash_bytes).await?;
+
+        Ok(proto::ChunkData {
+            file_id: chunk.file_id.clone(),
+            chunk_index: chunk.index,
+            data,
+            signature: chunk.signature.clone().unwrap_or_default(),
+            sequence: chunk.sequence,
+        })
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs;
     use tempfile::tempdir;
 
     #[tokio::test]
@@ -247,19 +355,24 @@ mod tests {
 
         let info = FileInfo {
             file_id: "test123".to_string(),
-            total_size: 1000,
-            chunk_hashes: vec![],
+            name: "test.txt".to_string(),
+            size: 1000,
+            chunk_size: 1024,
             mime_type: "text/plain".to_string(),
-            original_name: "test.txt".to_string(),
+            chunk_hashes: vec![],
             created_at: 12345,
+            version: 1,
+            category: Some("documents".to_string()),
+            signature: None,
             checksums: HashMap::new(),
+            tags: HashMap::new(),
         };
 
         cell.store_file_info(info.clone()).await.unwrap();
 
         let retrieved = cell.get_file_info("test123").await.unwrap().unwrap();
         assert_eq!(retrieved.file_id, info.file_id);
-        assert_eq!(retrieved.total_size, info.total_size);
+        assert_eq!(retrieved.size, info.size);
     }
 
     #[tokio::test]

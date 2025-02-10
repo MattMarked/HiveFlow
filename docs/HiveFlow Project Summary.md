@@ -17,19 +17,19 @@ HiveFlow is a modern peer-to-peer file sharing system, inspired by eMule but bui
 hiveflow/
 ├── hiveflow-core/            # Rust P2P core
 │   ├── src/
-│   │   ├── swarm/            # P2P networking
-│   │   ├── cell/             # Content storage
-│   │   ├── crypto/           # Encryption
-│   │   └── protocol/         # Protocol definitions
+│   │   ├── cell/            # Content storage
+│   │   ├── proto/           # Generated protocol code
+│   │   └── lib.rs           # Library root
+│   ├── build.rs             # Protocol compilation
 │   └── Cargo.toml
 ├── web/                      # Next.js frontend
 │   ├── app/                  # App routes
-│   ├── components/           # React components
-│   ├── lib/                  # WebAssembly bindings
+│   ├── components/          # React components
+│   ├── lib/                 # WebAssembly bindings
 │   └── package.json
 ├── proto/                    # Protocol definitions
-│   └── hiveflow.proto        # Message schemas
-└── docs/                     # Documentation
+│   └── hiveflow.proto       # Message schemas
+└── docs/                    # Documentation
 ```
 
 ## Key Features
@@ -76,54 +76,83 @@ The protocol (.proto file) defines:
    - Bandwidth management
    - Availability tracking
 
-3. Priority Levels:
-   - LOW
-   - NORMAL
-   - HIGH
-
-4. Peer States:
-   - UNKNOWN
-   - ONLINE
-   - BUSY
-   - AWAY
-   - OFFLINE
-
 ## Current Progress
 1. Initial project structure created
 2. Protocol definitions completed
 3. Basic documentation in place
-4. Git repository initialized both in local and Github account
+4. Git repository initialized
 5. MIT License applied
 6. Rust core project setup complete
    - Project structure created (hiveflow-core)
    - Dependencies configured in Cargo.toml
-   - Module structure established (swarm, cell, crypto, protocol)
+   - Module structure established
    - Build system configured for protobuf compilation
-   - Initial tests passing
-7. Core/cell module complete with basic functionality
-   - Test coverage includes basic operations and garbage collection
-   - Ready for integration with other modules
+7. Core/cell module implementation
+   - Basic functionality complete
+   - Content-addressed storage implemented
+   - Chunk-based file handling working
+   - File metadata management implemented
+   - Garbage collection implemented
+   - Protocol buffer integration started
+   - Test coverage for basic operations
 
 ## Next Steps
-1. Implement Rust core modules
-   - Create content storage system (cell module): in progress
-      - Implement file splitting/joining functions
-      - Add integrity verification
-   - Develop protocol message handlers
-   - Add encryption and security features (crypto module)
-   - Implement swarm module for P2P networking (libp2p)
+1. Complete Protocol Integration
+   - Finish cell module protocol alignment
+   - Implement remaining protocol message handlers
+   - Add protocol-specific tests
+   - Add conversion functions between native and proto types
+   - Implement error handling for protocol operations
 
+2. Enhance Cell Module
+   - Add streaming file upload/download
+   - Implement chunk verification
+   - Add resumable transfer support
+   - Implement file versioning
+   - Add chunk compression
+   - Implement chunk-level deduplication
+   - Add integrity checking
+   - Implement LRU cache for chunks
+   - Add batch operations support
+   - Implement async file operations
 
-2. Create web frontend
+3. Security Implementation
+   - Add encryption support
+   - Implement chunk signatures
+   - Add access control
+   - Implement verification system
+
+4. Create Web Frontend
    - Basic UI structure
    - File management interface
    - Transfer monitoring
 
-3. Testing
+## Development Guidelines
+1. Code Style
+   - Follow Rust best practices
+   - Maintain protocol alignment
+   - Use descriptive variable names
+   - Add comprehensive comments
+   - Create tests for new functionality
+
+2. Protocol Integration
+   - Maintain compatibility with proto definitions
+   - Use protocol types consistently
+   - Organize generated code in dedicated module
+   - Implement proper error handling
+
+3. Documentation
+   - Update documentation with changes
+   - Keep README.md user-focused
+   - Maintain technical details in docs/
+   - Add inline documentation
+
+4. Testing
    - Protocol validation
    - Network testing
    - Security audit
-   - Expand test coverage for core modules
+   - Feature-specific tests
+   - Integration tests
 
 ## Project Setup Instructions
 1. Clone repository
@@ -134,11 +163,3 @@ The protocol (.proto file) defines:
 
 ## License
 The project is licensed under MIT License, allowing for open source collaboration while maintaining intellectual property rights.
-
-## Repository Structure
-- README.md: Project overview
-- LICENSE: MIT License
-- /docs: Detailed documentation
-- /proto: Protocol definitions
-- /core: Rust implementation (pending)
-- /web: Next.js frontend (pending)
